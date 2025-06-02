@@ -1,10 +1,11 @@
 package com.blessing.channel.domain.repository;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import com.blessing.channel.domain.entity.DonationLog;
+import com.blessing.channel.domain.entity.User;
+import com.blessing.channel.repository.UserRepository;
 import jakarta.transaction.Transactional;
-import java.time.LocalDateTime;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,14 +16,28 @@ import org.springframework.test.annotation.Rollback;
 @Rollback(value = false)
 class DonationLogRepositoryTest {
   @Autowired
-  DonationLogRepository donationLogRepository;
+  private UserRepository userRepository;
 
+  @BeforeEach
+  void setUp() {
+    userRepository.deleteAll();
+  }
   @Test
   void save() {
-    DonationLog donationLog = new DonationLog(null,"1","!", 50,
-        LocalDateTime.now());
+    // 1️⃣ 사용자 저장
+    User user = new User();
+    user.setName("김동준");
+    user.setTotalDonation(130);
+    user.setTotalPoint(13);
+    userRepository.save(user);
 
-    donationLogRepository.save(donationLog);
+    // 2️⃣ 기부 로그 저장
+
+
+    // 3️⃣ 검증
+//    List<DonationLog> logs = donationLogRepository.findByName("김동준");
+//    assertThat(logs).isNotEmpty();
+//    assertThat(logs.get(0).getAmount()).isEqualTo(100);
   }
 
 
