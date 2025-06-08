@@ -27,6 +27,7 @@ public class User {
   @Column(name = "user_id")
   private Long id;
 
+  @Column(unique = true, nullable = false)
   private String name;
 
   private int totalDonation = 0;
@@ -35,4 +36,6 @@ public class User {
 
   private LocalDateTime createdAt = LocalDateTime.now();
 
+  @Column(name = "last_banner_rewarded_at")
+  private LocalDateTime lastBannerRewardedAt;
 }

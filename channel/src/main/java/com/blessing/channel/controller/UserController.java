@@ -1,10 +1,14 @@
 package com.blessing.channel.controller;
 
 import com.blessing.channel.domain.dto.DonationRequest;
+import com.blessing.channel.domain.dto.RankedUserDto;
 import com.blessing.channel.domain.dto.UserSummaryDto;
+import com.blessing.channel.domain.dto.UserSummaryRequest;
+import com.blessing.channel.domain.dto.UserSummaryResponse;
 import com.blessing.channel.domain.entity.User;
 import com.blessing.channel.repository.UserRepository;
 import com.blessing.channel.service.UserService;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.http.HttpStatus;
@@ -31,17 +35,34 @@ public class UserController {
     this.userService = userService;
   }
 
-  @GetMapping("/{userId}/summary")
-  public ResponseEntity<?> getSummary(@PathVariable String userId) {
-    User user = userRepository.findByName(userId).orElseThrow();
+//  @PostMapping("/{name}/reward")
+//  public ResponseEntity<?> rewardUser(@PathVariable String name, @RequestParam int amount) {
+//    User user = userRepository.findByName(name)
+//        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+//
+//    user.setTotalDonation(user.getTotalDonation() + amount);
+//
+//    // 10% 포인트 적립 (소수점 아래는 버림)
+//    user.setTotalPoint(user.getTotalPoint() + (amount / 10));
+//
+//    userRepository.save(user);
+//    return ResponseEntity.ok().build();
+//  }
 
-    int point = user.getTotalPoint();
-    int totalDonation = user.getTotalDonation();
 
-    return ResponseEntity.ok(Map.of(
-        "point", point,
-        "totalDonation", totalDonation
-    ));
+  @PostMapping("/{userId}/summary")
+  public ResponseEntity<UserSummaryResponse> registerIfNotExists(@PathVariable String userId) {
+    User user = userRepository.findByName(userId)
+        .orElseGet(() -> {
+          User newUser = new User();
+          newUser.setName(userId);
+          newUser.setTotalPoint(0);
+          newUser.setTotalDonation(0);
+          return userRepository.save(newUser); // 저장
+        });
+
+    return ResponseEntity.ok(new UserSummaryResponse(user.getTotalPoint(),
+        user.getTotalDonation()));
   }
   @GetMapping("/name/{name}/summary")
   public ResponseEntity<Map<String, Integer>> getUserSummaryByName(@PathVariable String name) {
@@ -54,49 +75,59 @@ public class UserController {
     return ResponseEntity.ok(result);
   }
 
-
-
-  // ✅ POST /api/users/{name}/summary
-  @PostMapping("/{name}/summary")
-  public ResponseEntity<Void> updateSummary(
-      @PathVariable String name,
-      @RequestBody UserSummaryDto dto) {
-
-    int point = dto.getPoint();
-
-    User user = userRepository.findByName(name)
-        .orElseGet(() -> {
-          User newUser = new User();
-          newUser.setName(name);
-          return newUser;
-        });
-
-    user.setTotalPoint(point);
-    userRepository.save(user);
-
-    return ResponseEntity.ok().build();
+  @GetMapping("/exists/{userId}")
+  public ResponseEntity<Boolean> userExists(@PathVariable String userId) {
+    boolean exists = userRepository.existsByName(userId);
+    return ResponseEntity.ok(exists);
   }
 
-  @PostMapping("/{userId}/summary")
-  public ResponseEntity<?> registerUserIfNotExists(
-      @PathVariable String userId,
-      @RequestBody UserSummaryDto dto) {
 
-    // 이미 존재하면 아무것도 안 함
-    Optional<User> optional = userRepository.findByName(userId);
-    if (optional.isPresent()) {
-      return ResponseEntity.ok(Map.of("message", "User already exists"));
-    }
+//  // ✅ POST /api/users/{name}/summary
+//  @PostMapping("/{name}/summary")
+//  public ResponseEntity<Void> updateSummary(
+//      @PathVariable String name,
+//      @RequestBody UserSummaryDto dto) {
+//
+//    int point = dto.getPoint();
+//
+//    User user = userRepository.findByName(name)
+//        .orElseGet(() -> {
+//          User newUser = new User();
+//          newUser.setName(name);
+//          return newUser;
+//        });
+//
+//    user.setTotalPoint(point);
+//    userRepository.save(user);
+//
+//    return ResponseEntity.ok().build();
+//  }
 
-    // 신규 유저 생성
-    User newUser = new User();
-    newUser.setName(userId);
-    newUser.setTotalPoint(dto.getPoint()); // 기본 0
-
-    userRepository.save(newUser);
-
-    return ResponseEntity.ok(Map.of("message", "User created"));
+  @GetMapping("/rank/top3")
+  public ResponseEntity<List<RankedUserDto>> getTop3Users() {
+    return ResponseEntity.ok(userService.getTop3UsersByPoint());
   }
+
+//  @PostMapping("/{userId}/summary")
+//  public ResponseEntity<?> registerUserIfNotExists(
+//      @PathVariable String userId,
+//      @RequestBody UserSummaryDto dto) {
+//
+//    // 이미 존재하면 아무것도 안 함
+//    Optional<User> optional = userRepository.findByName(userId);
+//    if (optional.isPresent()) {
+//      return ResponseEntity.ok(Map.of("message", "User already exists"));
+//    }
+//
+//    // 신규 유저 생성
+//    User newUser = new User();
+//    newUser.setName(userId);
+//    newUser.setTotalPoint(dto.getPoint()); // 기본 0
+//
+//    userRepository.save(newUser);
+//
+//    return ResponseEntity.ok(Map.of("message", "User created"));
+//  }
 
 //  @GetMapping("/points/total")
 //  public Map<String, Integer> getTotalPoints() {
@@ -131,6 +162,13 @@ public class UserController {
     int total = userRepository.sumAllUserDonations(); // 사용자 정의 쿼리 필요
     return Map.of("totalDonation", total);
   }
+
+  @PostMapping("/summary")
+  public ResponseEntity<UserSummaryResponse> summary(@RequestBody UserSummaryRequest request) {
+    UserSummaryResponse response =
+        userService.registerOrUpdateUserWithBannerReward(request.getUserId());
+    return ResponseEntity.ok(response);
+  }
   @GetMapping("/{name}/summary")
   public Map<String, Integer> getUserSummary(@PathVariable String name) {
     User user = userRepository.findByName(name)
@@ -140,16 +178,22 @@ public class UserController {
         "totalPoint", user.getTotalPoint()
     );
   }
-
   @PostMapping("/{name}/reward")
-  public ResponseEntity<?> rewardUser(@PathVariable String name, @RequestParam int amount) {
+  public ResponseEntity<?> rewardUser(
+      @PathVariable String name,
+      @RequestParam int amount,
+      @RequestParam String adType) {
+
     User user = userRepository.findByName(name)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
     user.setTotalDonation(user.getTotalDonation() + amount);
-    user.setTotalPoint(user.getTotalDonation() / 10);
+    user.setTotalPoint(user.getTotalPoint() + (amount / 2)); // ✅ 누적 증가 방식
     userRepository.save(user);
+
     return ResponseEntity.ok().build();
   }
+
 
 
 
