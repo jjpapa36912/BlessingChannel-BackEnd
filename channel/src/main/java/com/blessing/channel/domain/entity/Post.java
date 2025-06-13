@@ -65,7 +65,7 @@ public class Post {
       cdto.setAuthor(comment.getAuthor());
       cdto.setContent(comment.getContent());
       cdto.setLikes(comment.getLikes());
-      cdto.setEmoji(comment.getEmoji());
+      cdto.setEmoji(comment.getEmoji() != null ? comment.getEmoji() : "");
       return cdto;
     }).collect(Collectors.toList());
 

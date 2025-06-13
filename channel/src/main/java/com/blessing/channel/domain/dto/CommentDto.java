@@ -1,5 +1,6 @@
 package com.blessing.channel.domain.dto;
 
+import com.blessing.channel.domain.entity.Comment;
 import lombok.Data;
 
 @Data
