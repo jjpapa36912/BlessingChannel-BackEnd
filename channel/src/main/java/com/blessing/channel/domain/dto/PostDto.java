@@ -1,7 +1,8 @@
 package com.blessing.channel.domain.dto;
 
-import com.blessing.channel.domain.entity.Post;
-import java.time.format.DateTimeFormatter;
+import com.blessing.channel.domain.entity.Comment;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,9 +16,11 @@ public class PostDto {
   private String title;
   private String content;
   private String author;
-  private String createdAt;
+  private LocalDateTime createdAt;
   private Boolean isNotice;
-  private List<String> comments;
+  private List<CommentDto> comments = new ArrayList<>();
+
+  private Integer likes;
 
 
   public PostDto(PostDto postDto) {

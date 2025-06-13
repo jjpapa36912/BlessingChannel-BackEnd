@@ -2,11 +2,15 @@ package com.blessing.channel.repository;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.blessing.channel.domain.entity.Comment;
+import com.blessing.channel.domain.entity.CommentReaction;
 import com.blessing.channel.domain.entity.Post;
 import com.blessing.channel.service.PostService;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Random;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,44 +21,66 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Transactional
+@Rollback(value = false)
 class PostRepositoryTest {
   @Autowired
   private PostRepository postRepository;
+
   @Autowired
-  private PostService postService;
+  private CommentRepository commentRepository;
+
+  @Autowired
+  private CommentReactionRepository commentReactionRepository;
 
   @BeforeEach
-  void setUp() {
-    postRepository.deleteAll(); // 기존 데이터 삭제
+  void clearDatabase() {
+    commentReactionRepository.deleteAllInBatch();
+    commentRepository.deleteAllInBatch();
+    postRepository.deleteAllInBatch();
   }
+
 
   @Test
-  @Transactional
-  @Rollback(value = false)
-  void saveSamplePosts() {
-    // ✅ 샘플 게시글 3개 저장
-    postRepository.save(new Post("첫 글", "이것은 첫 번째 게시글입니다.", "김동준", true));
-    postRepository.save(new Post("두 번째 글", "이것은 두 번째 게시글입니다.", "홍길동", false));
-    postRepository.save(new Post("세 번째 글", "이것은 세 번째 게시글입니다.", "이영희", false));
+  @DisplayName("게시글, 댓글, 리액션 더미 데이터 저장 테스트")
+  void insertDummyData() {
+    commentReactionRepository.deleteAllInBatch();
+    commentRepository.deleteAllInBatch();
+    postRepository.deleteAllInBatch();
+    Random random = new Random();
 
-    // 🔹 1. 게시글 먼저 저장
-    Post post = new Post();
-    post.setTitle("테스트 제목");
-    post.setContent("테스트 내용");
-    post.setAuthor("김동준test");
-    post.setCreatedAt(LocalDateTime.now());
+    for (int i = 1; i <= 5; i++) {
+      Post post = new Post(
+          "테스트 제목 " + i,
+          "테스트 내용입니다. 번호: " + i,
+          "작성자" + i,
+          i % 2 == 0 // isNotice
+      );
+      post.setLikes(random.nextInt(50));
+      Post savedPost = postRepository.save(post);
 
-    post = postRepository.save(post);
-    // 🔹 2. 댓글 추가
-    postService.addComment(post.getId(), "김동준", "첫 댓글입니다");
+      for (int j = 1; j <= 3; j++) {
+        Comment comment = new Comment(
+            "댓글작성자" + j,
+            "이것은 댓글 " + j + "번입니다",
+            savedPost
+        );
+        comment.setLikes(random.nextInt(10));
+        comment.setEmoji("😊");
+        Comment savedComment = commentRepository.save(comment);
 
-    // ✅ 저장된 데이터 검증
-    List<Post> posts = postRepository.findAll();
-//    assertThat(posts).hasSize(3);
+        CommentReaction reaction = new CommentReaction();
+        reaction.setPostId(savedPost.getId());
+        reaction.setCommentId(savedComment.getId());
+        reaction.setAuthor("반응작성자" + j);
+        reaction.setEmoji("👍");
+        commentReactionRepository.save(reaction);
+      }
+    }
 
-    posts.forEach(p ->
-        System.out.println(p.getTitle() + " / " + p.getAuthor() + " / " + p.getCreatedAt())
-    );
+    assertThat(postRepository.count()).isEqualTo(5);
+    assertThat(commentRepository.count()).isEqualTo(15); // 5 posts × 3 comments
+    assertThat(commentReactionRepository.count()).isEqualTo(15);
+
+    System.out.println("✔ 더미 데이터 저장 테스트 성공");
   }
-
 }

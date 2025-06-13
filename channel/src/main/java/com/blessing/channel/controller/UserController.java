@@ -8,6 +8,7 @@ import com.blessing.channel.domain.dto.UserSummaryResponse;
 import com.blessing.channel.domain.entity.User;
 import com.blessing.channel.repository.UserRepository;
 import com.blessing.channel.service.UserService;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -102,7 +103,11 @@ public class UserController {
 //
 //    return ResponseEntity.ok().build();
 //  }
-
+    @GetMapping("/total-donation")
+    public Map<String, Integer> getTotalDonation() {
+      int total = userRepository.getTotalDonationSum();
+      return Collections.singletonMap("totalDonation", total);
+    }
   @GetMapping("/rank/top3")
   public ResponseEntity<List<RankedUserDto>> getTop3Users() {
     return ResponseEntity.ok(userService.getTop3UsersByPoint());
@@ -157,11 +162,11 @@ public class UserController {
     userService.addDonation(new DonationRequest(amount, section, adType));
     return ResponseEntity.ok().build();
   }
-  @GetMapping("/total-donation")
-  public Map<String, Integer> getTotalDonationFromUsers() {
-    int total = userRepository.sumAllUserDonations(); // 사용자 정의 쿼리 필요
-    return Map.of("totalDonation", total);
-  }
+//  @GetMapping("/total-donation")
+//  public Map<String, Integer> getTotalDonationFromUsers() {
+//    int total = userRepository.getTotalDonationSum(); // 사용자 정의 쿼리 필요
+//    return Map.of("totalDonation", total);
+//  }
 
   @PostMapping("/summary")
   public ResponseEntity<UserSummaryResponse> summary(@RequestBody UserSummaryRequest request) {

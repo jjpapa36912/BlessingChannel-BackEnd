@@ -14,11 +14,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
   Optional<User> findByName(String name);
 
   @Query("SELECT COALESCE(SUM(u.totalDonation), 0) FROM User u")
-  int sumAllUserDonations();
+  int getTotalDonationSum();
 
   @Query("SELECT new com.blessing.channel.domain.dto.RankedUserDto(u.name, u"
-      + ".totalPoint) " +
-      "FROM User u ORDER BY u.totalPoint DESC")
+      + ".totalDonation) " +
+      "FROM User u ORDER BY u.totalDonation DESC")
   List<RankedUserDto> findTop3ByPoint(Pageable pageable);
 
   boolean existsByName(String name);

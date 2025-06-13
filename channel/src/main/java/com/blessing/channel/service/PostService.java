@@ -9,13 +9,29 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Pageable;
+
 
 @Service
 @RequiredArgsConstructor
 public class PostService {
 
   private final PostRepository postRepository;
+//  public Page<PostDto> getPagedPosts(Pageable pageable) {
+//    return postRepository.findAllByOrderByIsNoticeDescCreatedAtDesc(pageable)
+//        .map(post -> new PostDto(
+//            post.getId(),
+//            post.getTitle(),
+//            post.getContent(),
+//            post.getAuthor(),
+//            post.getCreatedAt(),
+//            post.getIsNotice(),
+//            post.getComments(),
+//            post.getLikes()
+//        ));
+//  }
 
   // 글 생성
   public void createPost(String title, String content, String author, boolean isNotice) {
@@ -27,16 +43,16 @@ public class PostService {
     post.setIsNotice(isNotice);
     postRepository.save(post);
   }
-
-  public void addComment(Long postId, String author, String content) {
-    Post post = postRepository.findById(postId)
-        .orElseThrow(() -> new IllegalArgumentException("Post not found with id: " + postId));
-
-    String comment = author + ": " + content;
-    post.getComments().add(comment); // ✅ 댓글 추가
-
-    postRepository.save(post); // ✅ 댓글 리스트 변경 저장
-  }
+//
+//  public void addComment(Long postId, String author, String content) {
+//    Post post = postRepository.findById(postId)
+//        .orElseThrow(() -> new IllegalArgumentException("Post not found with id: " + postId));
+//
+//    String comment = author + ": " + content;
+//    post.getComments().add(comment); // ✅ 댓글 추가
+//
+//    postRepository.save(post); // ✅ 댓글 리스트 변경 저장
+//  }
 
   // 글 수정
   public void updatePost(Long id, PostRequest request) {
@@ -57,20 +73,22 @@ public class PostService {
 //  public List<Post> getAllPosts() {
 //    return postRepository.findAll();
 //  }
-  public List<PostDto> getAllPosts() {
-    return postRepository.findAllByOrderByIsNoticeDescCreatedAtDesc()
-        .stream()
-        .map(post -> new PostDto(
-            post.getId(),
-            post.getTitle(),
-            post.getContent(),
-            post.getAuthor(),
-            post.getCreatedAt().toString(),
-            post.getIsNotice(),
-            post.getComments()
-        ))
-        .collect(Collectors.toList());
-  }
+//  public List<PostDto> getAllPosts() {
+//    return postRepository.findAllByOrderByIsNoticeDescCreatedAtDesc()
+//        .stream()
+//        .map(post -> new PostDto(
+//            post.getId(),
+//            post.getTitle(),
+//            post.getContent(),
+//            post.getAuthor(),
+//            post.getCreatedAt().toString(),
+//            post.getIsNotice(),
+//            post.getComments(),
+//            post.getLikes()
+//
+//        ))
+//        .collect(Collectors.toList());
+//  }
 
 
   // 글 삭제
